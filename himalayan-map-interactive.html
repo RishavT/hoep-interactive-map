@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HOEP Interactive Himalayan Map</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f5f5;
+            overflow-x: hidden;
+        }
+
+        .map-container {
+            position: relative;
+            max-width: 100%;
+            margin: 40px auto;
+            padding: 20px;
+            opacity: 0;
+            animation: fadeIn 1s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+            }
+        }
+
+        .map-wrapper {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%; /* 16:9 aspect ratio - adjust based on your image */
+            background: #e0e0e0;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .map-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        /* Overlay for dimming effect */
+        .map-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            background: radial-gradient(circle at var(--x, 50%) var(--y, 50%), 
+                transparent 0%, 
+                transparent 15%, 
+                rgba(0, 0, 0, 0.6) 45%);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .map-overlay.active {
+            opacity: 1;
+        }
+
+        /* Pin Styles */
+        .pin {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            z-index: 10;
+            transition: transform 0.3s ease;
+        }
+
+        .pin:hover {
+            transform: translate(-50%, -50%) scale(1.15);
+        }
+
+        .pin:focus {
+            outline: 3px solid #4A90E2;
+            outline-offset: 2px;
+            border-radius: 50%;
+        }
+
+        /* Thunder Dragon Icon (SVG) */
+        .thunder-dragon {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+            }
+            50% {
+                transform: scale(1.05);
+                filter: drop-shadow(0 2px 8px rgba(255, 195, 0, 0.6));
+            }
+        }
+
+        /* Info Panel Styles (replacing legend) */
+        .map-info-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 16px;
+            width: 320px;
+            max-width: calc(100% - 40px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            z-index: 5;
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            transform-origin: bottom right;
+        }
+
+        .map-info-panel-ladakh {
+          position: absolute;
+          bottom: 20px;
+          left: 20px;
+        }
+
+        .map-info-panel-uttarakhand {
+          position: absolute;
+          bottom: 20px;
+          left: 20px;
+        }
+
+        .map-info-panel-nepal {
+          position: absolute;
+          bottom: 20px;
+          left: 20px;
+        }
+
+        .map-info-panel-arunachal {
+          position: absolute;
+          bottom: 20px;
+          left: 20px;
+        }
+
+        .info-panel-prompt {
+            display: none;
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            padding: 20px 0;
+        }
+
+        .info-panel-prompt svg {
+            width: 40px;
+            height: 40px;
+            margin-bottom: 8px;
+            opacity: 0.3;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .info-panel-content {
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+        }
+
+        .info-panel-content.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .info-panel-image {
+            width: 100%;
+            height: 140px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .info-panel-image.loaded {
+            opacity: 1;
+        }
+
+        .info-panel-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .info-panel-details {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        .info-panel-details ul {
+            margin: 8px 0;
+            padding-left: 20px;
+        }
+
+        .info-panel-details li {
+            margin: 4px 0;
+        }
+
+        /* Remove old tooltip styles */
+        .tooltip {
+            display: none;
+        }
+
+        /* Enhanced pin hover state */
+        .pin.active {
+            transform: translate(-50%, -50%) scale(1.2);
+            z-index: 11;
+        }
+
+        .pin.active .thunder-dragon {
+            filter: drop-shadow(0 4px 12px rgba(255, 195, 0, 0.8));
+        }
+
+        /* Mobile Styles */
+        @media (max-width: 768px) {
+            .map-container {
+                padding: 10px;
+                margin: 20px auto;
+            }
+
+            .pin {
+                width: 40px;
+                height: 40px;
+            }
+
+            .tooltip {
+                min-width: 250px;
+                max-width: 280px;
+                padding: 12px;
+            }
+
+            .tooltip-image {
+                height: 100px;
+            }
+
+            .map-legend {
+                bottom: 10px;
+                right: 10px;
+                padding: 8px;
+            }
+
+            .legend-title {
+                font-size: 11px;
+            }
+
+            .legend-item {
+                font-size: 12px;
+                padding: 3px 6px;
+            }
+        }
+
+        /* Touch device indicator */
+        .touch-hint {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 15;
+            pointer-events: none;
+        }
+
+        .touch-hint.show {
+            opacity: 1;
+        }
+
+        /* Loading skeleton for images */
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+
+        @keyframes loading {
+            0% {
+                background-position: 200% 0;
+            }
+            100% {
+                background-position: -200% 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="map-container">
+        <div class="map-wrapper">
+            <!-- Replace src with your Himalayan map image -->
+            <img class="map-image" src="map.png" alt="Himalayan Map">
+            
+            <!-- Dimming overlay -->
+            <div class="map-overlay"></div>
+
+            <!-- Touch hint for mobile -->
+            <div class="touch-hint">Tap on pins to explore locations</div>
+
+            <!-- Location Pins -->
+            <!-- Ladakh Pin -->
+            <div class="pin" 
+                 data-location="ladakh" 
+                 style="left: 40%; top: 35%;"
+                 tabindex="0"
+                 role="button"
+                 aria-label="Ladakh location">
+                <svg class="thunder-dragon" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="50" cy="50" r="20" fill="#4A90E2"/>
+                    <path d="M50 30 L55 45 L70 45 L58 55 L63 70 L50 60 L37 70 L42 55 L30 45 L45 45 Z" fill="#FFC107"/>
+                    <circle cx="50" cy="50" r="18" fill="none" stroke="#fff" stroke-width="2"/>
+                </svg>
+                <div class="tooltip">
+                    <img class="tooltip-image skeleton" data-src="ladakh.webp" alt="Ladakh">
+                    <h3 class="tooltip-title">Ladakh, India</h3>
+                    <div class="tooltip-content">
+                        <ul>
+                            <li>Altitude: 3,500m average</li>
+                            <li>Known as "Land of High Passes"</li>
+                            <li>Home to rare snow leopards</li>
+                            <li>Buddhist monastery heritage</li>
+                        </ul>
+                        <strong>Partner:</strong> Wet n Wild Explorations
+                    </div>
+                </div>
+            </div>
+
+            <!-- Uttarakhand Pin -->
+            <div class="pin" 
+                 data-location="uttarakhand" 
+                 style="left: 45%; top: 60%;"
+                 tabindex="0"
+                 role="button"
+                 aria-label="Uttarakhand location">
+                <svg class="thunder-dragon" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="50" cy="50" r="20" fill="#4A90E2"/>
+                    <path d="M50 30 L55 45 L70 45 L58 55 L63 70 L50 60 L37 70 L42 55 L30 45 L45 45 Z" fill="#FFC107"/>
+                    <circle cx="50" cy="50" r="18" fill="none" stroke="#fff" stroke-width="2"/>
+                </svg>
+                <div class="tooltip">
+                    <img class="tooltip-image skeleton" data-src="ladakh.webp" alt="Uttarakhand">
+                    <h3 class="tooltip-title">Uttarakhand, India</h3>
+                    <div class="tooltip-content">
+                        <ul>
+                            <li>Source of Ganges & Yamuna rivers</li>
+                            <li>Valley of Flowers National Park</li>
+                            <li>Nanda Devi Biosphere Reserve</li>
+                            <li>Adventure sports capital</li>
+                        </ul>
+                        <strong>Partner:</strong> Coming Soon
+                    </div>
+                </div>
+            </div>
+
+            <!-- Arunachal Pradesh Pin -->
+            <div class="pin" 
+                 data-location="arunachal" 
+                 style="left: 70%; top: 65%;"
+                 tabindex="0"
+                 role="button"
+                 aria-label="Arunachal Pradesh location">
+                <svg class="thunder-dragon" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="50" cy="50" r="20" fill="#4A90E2"/>
+                    <path d="M50 30 L55 45 L70 45 L58 55 L63 70 L50 60 L37 70 L42 55 L30 45 L45 45 Z" fill="#FFC107"/>
+                    <circle cx="50" cy="50" r="18" fill="none" stroke="#fff" stroke-width="2"/>
+                </svg>
+                <div class="tooltip">
+                    <img class="tooltip-image skeleton" data-src="ladakh.webp" alt="Arunachal Pradesh">
+                    <h3 class="tooltip-title">Arunachal Pradesh, India</h3>
+                    <div class="tooltip-content">
+                        <ul>
+                            <li>Land of the rising sun</li>
+                            <li>500+ bird species</li>
+                            <li>26 major tribes</li>
+                            <li>Pristine forests & biodiversity</li>
+                        </ul>
+                        <strong>Partner:</strong> Coming Soon
+                    </div>
+                </div>
+            </div>
+
+            <!-- Nepal Pin -->
+            <div class="pin" 
+                 data-location="nepal" 
+                 style="left: 55%; top: 67%;"
+                 tabindex="0"
+                 role="button"
+                 aria-label="Nepal location">
+                <svg class="thunder-dragon" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="50" cy="50" r="20" fill="#4A90E2"/>
+                    <path d="M50 30 L55 45 L70 45 L58 55 L63 70 L50 60 L37 70 L42 55 L30 45 L45 45 Z" fill="#FFC107"/>
+                    <circle cx="50" cy="50" r="18" fill="none" stroke="#fff" stroke-width="2"/>
+                </svg>
+                <div class="tooltip">
+                    <img class="tooltip-image skeleton" data-src="ladakh.webp" alt="Nepal">
+                    <h3 class="tooltip-title">Nepal</h3>
+                    <div class="tooltip-content">
+                        <ul>
+                            <li>8 of world's 10 highest peaks</li>
+                            <li>Birthplace of Buddha</li>
+                            <li>Only living goddess (Kumari)</li>
+                            <li>Never colonized</li>
+                        </ul>
+                        <strong>Partner:</strong> Coming Soon
+                    </div>
+                </div>
+            </div>
+
+            <!-- Info Panel (replaces legend and tooltips) -->
+            <div class="map-info-panel">
+                <div class="info-panel-prompt">
+                    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="50" cy="50" r="20" fill="#4A90E2"/>
+                        <path d="M50 30 L55 45 L70 45 L58 55 L63 70 L50 60 L37 70 L42 55 L30 45 L45 45 Z" fill="#FFC107"/>
+                        <circle cx="50" cy="50" r="18" fill="none" stroke="#fff" stroke-width="2"/>
+                    </svg>
+                    <div>Hover over a pin to explore</div>
+                </div>
+                <div class="info-panel-content">
+                    <img class="info-panel-image skeleton" src="" alt="">
+                    <h3 class="info-panel-title"></h3>
+                    <div class="info-panel-details"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize the interactive map
+        class InteractiveMap {
+            constructor() {
+                this.pins = document.querySelectorAll('.pin');
+                this.overlay = document.querySelector('.map-overlay');
+                this.touchHint = document.querySelector('.touch-hint');
+                this.infoPanel = document.querySelector('.map-info-panel');
+                this.infoPanelContent = document.querySelector('.info-panel-content');
+                this.infoPanelPrompt = document.querySelector('.info-panel-prompt');
+                this.isTouchDevice = 'ontouchstart' in window;
+                this.activePin = null;
+                
+                // Location data
+                this.locationData = {
+                    ladakh: {
+                        title: 'Ladakh, India',
+                        image: 'ladakh.webp',
+                        details: `
+                            <ul>
+                                <li>Altitude: 3,500m average</li>
+                                <li>Known as "Land of High Passes"</li>
+                                <li>Home to rare snow leopards</li>
+                                <li>Buddhist monastery heritage</li>
+                            </ul>
+                            <strong>Partner:</strong> Wet n Wild Explorations
+                        `
+                    },
+                    uttarakhand: {
+                        title: 'Uttarakhand, India',
+                        image: 'ladakh.webp',
+                        details: `
+                            <ul>
+                                <li>Source of Ganges & Yamuna rivers</li>
+                                <li>Valley of Flowers National Park</li>
+                                <li>Nanda Devi Biosphere Reserve</li>
+                                <li>Adventure sports capital</li>
+                            </ul>
+                            <strong>Partner:</strong> Coming Soon
+                        `
+                    },
+                    arunachal: {
+                        title: 'Arunachal Pradesh, India',
+                        image: 'ladakh.webp',
+                        details: `
+                            <ul>
+                                <li>Land of the rising sun</li>
+                                <li>500+ bird species</li>
+                                <li>26 major tribes</li>
+                                <li>Pristine forests & biodiversity</li>
+                            </ul>
+                            <strong>Partner:</strong> Coming Soon
+                        `
+                    },
+                    nepal: {
+                        title: 'Nepal',
+                        image: 'ladakh.webp',
+                        details: `
+                            <ul>
+                                <li>8 of world's 10 highest peaks</li>
+                                <li>Birthplace of Buddha</li>
+                                <li>Only living goddess (Kumari)</li>
+                                <li>Never colonized</li>
+                            </ul>
+                            <strong>Partner:</strong> Coming Soon
+                        `
+                    }
+                };
+                
+                this.init();
+            }
+
+            init() {
+                // Show touch hint on mobile
+                if (this.isTouchDevice) {
+                    setTimeout(() => {
+                        this.touchHint.classList.add('show');
+                        setTimeout(() => {
+                            this.touchHint.classList.remove('show');
+                        }, 3000);
+                    }, 1000);
+                }
+
+                // Setup event listeners for pins
+                this.pins.forEach(pin => {
+                    // Desktop hover events
+                    if (!this.isTouchDevice) {
+                        pin.addEventListener('mouseenter', (e) => this.showLocationInfo(e.currentTarget));
+                        pin.addEventListener('mouseleave', () => this.hideLocationInfo());
+                        pin.addEventListener('mousemove', (e) => this.showLocationInfo(null, e));
+                    }
+                    
+                    // Mobile tap events
+                    pin.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        if (this.isTouchDevice) {
+                            if (this.activePin === e.currentTarget) {
+                                this.hideLocationInfo();
+                            } else {
+                                this.showLocationInfo(e.currentTarget);
+                            }
+                        }
+                    });
+
+                    // Keyboard accessibility
+                    pin.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            this.showLocationInfo(e.currentTarget);
+                        }
+                    });
+
+                    pin.addEventListener('blur', () => {
+                        if (!this.isTouchDevice) {
+                            this.hideLocationInfo();
+                        }
+                    });
+                });
+
+                // Close info panel when clicking outside on mobile
+                if (this.isTouchDevice) {
+                    document.addEventListener('click', (e) => {
+                        if (!e.target.closest('.pin')) {
+                            this.hideLocationInfo();
+                        }
+                    });
+                }
+
+                // Add parallax effect on desktop
+                if (!this.isTouchDevice) {
+                    // this.addParallaxEffect();
+                }
+
+              const firstPin = document.getElementsByClassName("pin")[0];
+              this.showLocationInfo(firstPin);
+              this.hideLocationInfo();
+            }
+
+            showLocationInfo(pin, event) {
+                if (!pin) {
+                  // If no pin is provided, use the event target rectangle
+                  // and pin bounding rectangles to get active pin
+                  if (event) {
+                    const targetRect = event.target.getBoundingClientRect();
+                    window.lastTargetRect = targetRect;
+                    this.pins.forEach(p => {
+                      const rect = p.getBoundingClientRect();
+                      if (rect.left <= targetRect.right && rect.right >= targetRect.left &&
+                          rect.top <= targetRect.bottom && rect.bottom >= targetRect.top) {
+                        pin = p;
+                      }
+                    });
+                  }
+                }
+
+                if (this.activePin) {
+                    this.activePin.classList.remove('active');
+                }
+
+                // Set active pin
+                this.activePin = pin;
+                pin.classList.add('active');
+                this.infoPanel.classList.add(`map-info-panel-${pin.dataset.location}`);
+
+                // Get location data
+                const location = pin.dataset.location;
+                const data = this.locationData[location];
+
+                // Update info panel content
+                const image = this.infoPanelContent.querySelector('.info-panel-image');
+                const title = this.infoPanelContent.querySelector('.info-panel-title');
+                const details = this.infoPanelContent.querySelector('.info-panel-details');
+
+                title.textContent = data.title;
+                details.innerHTML = data.details;
+
+                // Load image
+                if (image.src !== data.image) {
+                    image.classList.remove('loaded');
+                    image.classList.add('skeleton');
+                    const tempImg = new Image();
+                    tempImg.onload = () => {
+                        image.src = data.image;
+                        image.alt = data.title;
+                        image.classList.remove('skeleton');
+                        image.classList.add('loaded');
+                    };
+                    tempImg.src = data.image;
+                }
+
+                // Hide prompt and show content
+                this.infoPanel.style.display = "block";
+                this.infoPanelPrompt.style.display = 'none';
+                this.infoPanelContent.style.display = 'block';
+                setTimeout(() => {
+                    this.infoPanelContent.classList.add('active');
+                }, 10);
+
+                // Show dimming overlay
+                const rect = pin.getBoundingClientRect();
+                const containerRect = pin.closest('.map-wrapper').getBoundingClientRect();
+                const x = ((rect.left - containerRect.left + rect.width / 2) / containerRect.width) * 100;
+                const y = ((rect.top - containerRect.top + rect.height / 2) / containerRect.height) * 100;
+                
+                this.overlay.style.setProperty('--x', `${x}%`);
+                this.overlay.style.setProperty('--y', `${y}%`);
+                this.overlay.classList.add('active');
+            }
+
+            hideLocationInfo() {
+                // Check if the mouse is on active pin
+                if (this.activePin) {
+                    this.activePin.classList.remove('active');
+                    this.activePin = null;
+                }
+
+                // Hide content and show prompt
+                this.infoPanelContent.classList.remove('active');
+                setTimeout(() => {
+                    this.infoPanelContent.style.display = 'none';
+                    this.infoPanelPrompt.style.display = 'none';
+                    this.infoPanel.style.display = "none";
+                }, 300);
+
+                // Hide overlay
+                this.overlay.classList.remove('active');
+            }
+
+            addParallaxEffect() {
+                const mapImage = document.querySelector('.map-image');
+                const mapWrapper = document.querySelector('.map-wrapper');
+                
+                mapWrapper.addEventListener('mousemove', (e) => {
+                    const rect = mapWrapper.getBoundingClientRect();
+                    const x = (e.clientX - rect.left) / rect.width;
+                    const y = (e.clientY - rect.top) / rect.height;
+                    
+                    const moveX = (x - 0.5) * 10;
+                    const moveY = (y - 0.5) * 10;
+                    
+                    mapImage.style.transform = `scale(1.05) translate(${moveX}px, ${moveY}px)`;
+                });
+
+                mapWrapper.addEventListener('mouseleave', () => {
+                    mapImage.style.transform = 'scale(1) translate(0, 0)';
+                });
+            }
+        }
+
+        // Initialize when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            new InteractiveMap();
+        });
+    </script>
+</body>
+</html>

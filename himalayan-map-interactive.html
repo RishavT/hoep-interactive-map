@@ -24,6 +24,7 @@
             padding: 0px;
             opacity: 0;
             animation: fadeIn 1s ease-out forwards;
+            overflow: hidden;
         }
 
         @keyframes fadeIn {
@@ -35,6 +36,8 @@
         .map-wrapper {
             position: relative;
             width: 100%;
+            max-width: 1305px;
+            max-height: 735px;
             padding-bottom: 56.25%; /* 16:9 aspect ratio - adjust based on your image */
             background: #e0e0e0;
             // border-radius: 12px;
@@ -305,7 +308,7 @@
     </style>
 </head>
 <body>
-    <div class="map-container">
+    <div class="map-container" id="map-container">
         <div class="map-wrapper">
             <!-- Replace src with your Himalayan map image -->
             <img class="map-image" src="map.png" alt="Himalayan Map">
@@ -451,6 +454,7 @@
                 this.pins = document.querySelectorAll('.pin');
                 this.overlay = document.querySelector('.map-overlay');
                 this.touchHint = document.querySelector('.touch-hint');
+                this.mapContainer = document.getElementById("map-container");
                 this.infoPanel = document.querySelector('.map-info-panel');
                 this.infoPanelContent = document.querySelector('.info-panel-content');
                 this.infoPanelPrompt = document.querySelector('.info-panel-prompt');
@@ -514,6 +518,17 @@
                 };
                 
                 this.init();
+                window.addEventListener("load", () => {
+                  console.log("Everything is loaded — DOM, images, iframes, fonts");
+                  // this.mapContainer.style.height = this.mapContainer.getBoundingClientRect().width * 0.56 + "px";            }
+                  const width = Math.min(window.innerWidth, 1305);
+                  const height = width * 0.56
+                  this.mapContainer.style.width = width + "px";
+                  this.mapContainer.style.height = height + "px";
+                  // position the mapContainer to the middle of window.innerWidth
+                  this.mapContainer.style.marginLeft = (window.innerWidth - width) / 2 + "px";
+                });
+
             }
 
             init() {

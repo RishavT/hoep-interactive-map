@@ -36,8 +36,6 @@
         .map-wrapper {
             position: relative;
             width: 100%;
-            max-width: 1305px;
-            max-height: 735px;
             padding-bottom: 56.25%; /* 16:9 aspect ratio - adjust based on your image */
             background: #e0e0e0;
             // border-radius: 12px;
@@ -521,7 +519,11 @@
                 window.addEventListener("load", () => {
                   console.log("Everything is loaded — DOM, images, iframes, fonts");
                   // this.mapContainer.style.height = this.mapContainer.getBoundingClientRect().width * 0.56 + "px";            }
-                  const width = Math.min(window.innerWidth, 1305);
+                  let maxWidth = (new URL(window.location.href)).searchParams.get("maxWidth");
+                  if (!maxWidth) {
+                    maxWidth = 1305;
+                  }
+                  const width = Math.min(window.innerWidth, maxWidth);
                   const height = width * 0.56
                   this.mapContainer.style.width = width + "px";
                   this.mapContainer.style.height = height + "px";

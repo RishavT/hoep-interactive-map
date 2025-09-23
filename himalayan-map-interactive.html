@@ -68,6 +68,20 @@
             transition: opacity 0.5s ease;
         }
 
+        .ladakh-arunachal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transition: opacity 0.5s ease;
+            opacity: 0;
+        }
+
+        .ladakh-arunachal-overlay.active {
+            opacity: 80%;
+        }
+
         .map-overlay.active {
             opacity: 1;
         }
@@ -81,6 +95,7 @@
             cursor: pointer;
             z-index: 10;
             transition: transform 0.3s ease;
+            outline: none;
         }
 
         .pin:hover {
@@ -88,9 +103,17 @@
         }
 
         .pin:focus {
-            outline: 3px solid rgb(220,50,50);
+            outline: 3px solid rgba(220,50,50,0.6);
             outline-offset: 2px;
             border-radius: 50%;
+            transition: outline 0.2s ease;
+        }
+
+        .pin.force-focus {
+            outline: 3px solid rgba(220,50,50,0.6);
+            outline-offset: 2px;
+            border-radius: 50%;
+            transition: outline 0.2s ease;
         }
 
         /* Thunder Dragon Icon*/
@@ -324,6 +347,7 @@
             
             <!-- Dimming overlay -->
             <div class="map-overlay"></div>
+            <img class="ladakh-arunachal-overlay" src="ladakh-arunachal-overlay.png"></img>
 
             <!-- Touch hint for mobile -->
             <div class="touch-hint">Tap on pins to explore locations</div>
@@ -509,6 +533,7 @@
             constructor() {
                 this.pins = document.querySelectorAll('.pin');
                 this.overlay = document.querySelector('.map-overlay');
+                this.ladakhArunachalOverlay = document.querySelector('.ladakh-arunachal-overlay');
                 this.touchHint = document.querySelector('.touch-hint');
                 this.infoPanel = document.querySelector('.map-info-panel');
                 this.infoPanelContent = document.querySelector('.info-panel-content');
@@ -609,6 +634,9 @@
                 window.addEventListener("load", this.resizeMapContainer);
                 window.addEventListener("resize", this.resizeMapContainer);
 
+                const ladakhPin = document.querySelector('.pin[data-location="ladakh"]');
+
+
             }
             resizeMapContainer() {
                 console.log("Everything is loaded — DOM, images, iframes, fonts");
@@ -705,6 +733,17 @@
               this.hideLocationInfo(true);
             }
 
+            showDimmingOverlay(pin, second = false) {
+                const rect = pin.getBoundingClientRect();
+                const containerRect = pin.closest('.map-wrapper').getBoundingClientRect();
+                const x = ((rect.left - containerRect.left + rect.width / 2) / containerRect.width) * 100;
+                const y = ((rect.top - containerRect.top + rect.height / 2) / containerRect.height) * 100;
+                
+                this.overlay.style.setProperty('--x', `${x}%`);
+                this.overlay.style.setProperty('--y', `${y}%`);
+                this.overlay.classList.add('active');
+            }
+
             showLocationInfo(pin, event) {
                 if (!pin) {
                   // If no pin is provided, use the event target rectangle
@@ -766,26 +805,45 @@
                 }, 10);
 
                 // Show dimming overlay
-                const rect = pin.getBoundingClientRect();
-                const containerRect = pin.closest('.map-wrapper').getBoundingClientRect();
-                const x = ((rect.left - containerRect.left + rect.width / 2) / containerRect.width) * 100;
-                const y = ((rect.top - containerRect.top + rect.height / 2) / containerRect.height) * 100;
-                
-                this.overlay.style.setProperty('--x', `${x}%`);
-                this.overlay.style.setProperty('--y', `${y}%`);
-                this.overlay.classList.add('active');
+                this.showDimmingOverlay(pin);
+
+                // put pin into focus
+                pin.focus();
+
+                // If Laadkh or Arunachal, show the other one too
+                if (pin.dataset.location === "ladakh") {
+                    // Show Arunachal too
+                    const arunachalPin = document.querySelector('.pin[data-location="arunachal"]');
+                    arunachalPin.classList.add('force-focus');
+                    this.overlay.classList.remove('active');
+                    this.ladakhArunachalOverlay.classList.add('active');
+                }
+                else if (pin.dataset.location === "arunachal") {
+                    // Show Ladakh too
+                    const ladakhPin = document.querySelector('.pin[data-location="ladakh"]');
+                    ladakhPin.classList.add('force-focus');
+                    this.overlay.classList.remove('active');
+                    this.ladakhArunachalOverlay.classList.add('active');
+                }
+                else {
+                    // remove force-focus from all pins
+                    document.querySelectorAll('.pin').forEach(p => p.classList.remove('force-focus'));
+                    this.ladakhArunachalOverlay.classList.remove('active');
+                }
             }
 
             hideLocationInfo(hideAll) {
                 // Check if the mouse is on active pin
                 if (this.activePin) {
                     this.activePin.classList.remove('active');
+                    this.activePin.classList.remove('force-focus');
                     this.activePin = null;
                 }
 
                 // Hide content and show prompt
                 if (hideAll) {
                   this.infoPanelContent.classList.remove('active');
+                  document.querySelectorAll('.pin').forEach(p => p.classList.remove('force-focus'));
                   setTimeout(() => {
                       this.infoPanelContent.style.display = 'none';
                       this.infoPanelPrompt.style.display = 'none';
@@ -796,6 +854,7 @@
 
                 // Hide overlay
                 this.overlay.classList.remove('active');
+                this.ladakhArunachalOverlay.classList.remove('active');
             }
 
             addParallaxEffect() {

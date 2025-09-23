@@ -124,6 +124,9 @@
             z-index: 5;
             transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
             transform-origin: bottom right;
+            position: absolute;
+            left: 20px;
+            bottom: 20px;
         }
 
         .map-info-panel-ladakh {
@@ -622,6 +625,10 @@
                     mapWrapper.style.width = `${window.innerHeight / ratio}px`;
                 }
                 mapContainer.style.left = `${(window.innerWidth - mapContainer.offsetWidth) / 2}px`;
+
+                const mapInfoPanel = document.querySelector('.map-info-panel');
+                mapInfoPanel.style.transform = `scale(${mapContainer.offsetWidth / 1100.0})`;
+                mapInfoPanel.style.transformOrigin = "bottom left";
             }
             init() {
                 // Show touch hint on mobile

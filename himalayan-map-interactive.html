@@ -88,7 +88,7 @@
         }
 
         .pin:focus {
-            outline: 3px solid #4A90E2;
+            outline: 3px solid rgb(220,50,50);
             outline-offset: 2px;
             border-radius: 50%;
         }
@@ -97,6 +97,9 @@
         .thunder-dragon {
             width: 70%;
             height: 70%;
+            position: relative;
+            left: 13%;
+            top: 10%;
             filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
             animation: pulse 2s ease-in-out infinite;
         }
@@ -629,6 +632,11 @@
                 const mapInfoPanel = document.querySelector('.map-info-panel');
                 mapInfoPanel.style.transform = `scale(${mapContainer.offsetWidth / 1100.0})`;
                 mapInfoPanel.style.transformOrigin = "bottom left";
+
+                const pins = document.querySelectorAll('.pin');
+                pins.forEach(pin => {
+                    pin.style.transform = `translate(-50%, -50%) scale(${mapContainer.offsetWidth / 1100.0})`;
+                });
             }
             init() {
                 // Show touch hint on mobile

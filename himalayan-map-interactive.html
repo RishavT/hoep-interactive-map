@@ -19,7 +19,7 @@
 
         .map-container {
             position: relative;
-            max-width: 100%;
+            width: 100%;
             margin: 0px;
             padding: 0px;
             opacity: 0;
@@ -49,7 +49,6 @@
             left: 0;
             width: 100%;
             height: 100%;
-            object-fit: scale-down;
             transition: transform 0.3s ease;
         }
 
@@ -313,7 +312,7 @@
 </head>
 <body>
     <div class="map-container" id="map-container">
-        <div class="map-wrapper">
+        <div class="map-wrapper" id="map-wrapper">
             <!-- Replace src with your Himalayan map image -->
             <img class="map-image" src="map.png" alt="Himalayan Map">
             
@@ -505,7 +504,6 @@
                 this.pins = document.querySelectorAll('.pin');
                 this.overlay = document.querySelector('.map-overlay');
                 this.touchHint = document.querySelector('.touch-hint');
-                this.mapContainer = document.getElementById("map-container");
                 this.infoPanel = document.querySelector('.map-info-panel');
                 this.infoPanelContent = document.querySelector('.info-panel-content');
                 this.infoPanelPrompt = document.querySelector('.info-panel-prompt');
@@ -601,23 +599,30 @@
                 };
                 
                 this.init();
-                window.addEventListener("load", () => {
-                  console.log("Everything is loaded — DOM, images, iframes, fonts");
-                  // this.mapContainer.style.height = this.mapContainer.getBoundingClientRect().width * 0.56 + "px";            }
-                  let maxWidth = (new URL(window.location.href)).searchParams.get("maxWidth");
-                  if (!maxWidth) {
-                    maxWidth = 1305;
-                  }
-                  // const width = Math.min(window.innerWidth, maxWidth);
-                  // const height = width * 0.6477
-                  // this.mapContainer.style.width = width + "px";
-                  // this.mapContainer.style.height = height + "px";
-                  // // position the mapContainer to the middle of window.innerWidth
-                  // this.mapContainer.style.marginLeft = "0px";
-                });
+                
+                window.addEventListener("load", this.resizeMapContainer);
+                window.addEventListener("resize", this.resizeMapContainer);
 
             }
-
+            resizeMapContainer() {
+                console.log("Everything is loaded — DOM, images, iframes, fonts");
+                const mapContainer = document.getElementById("map-container");
+                const mapWrapper = document.getElementById("map-wrapper");
+                const ratio = 0.6477; // height / width ratio of the map image
+                if (window.innerHeight / window.innerWidth >= ratio) {
+                    mapContainer.style.width = `${window.innerWidth}px`;
+                    mapContainer.style.height = `${window.innerWidth * ratio}px`;
+                    mapWrapper.style.width = `${window.innerWidth}px`;
+                    mapWrapper.style.height = `${window.innerWidth * ratio}px`;
+                }
+                else {
+                    mapContainer.style.height = `${window.innerHeight}px`;
+                    mapContainer.style.width = `${window.innerHeight / ratio}px`;
+                    mapWrapper.style.height = `${window.innerHeight}px`;
+                    mapWrapper.style.width = `${window.innerHeight / ratio}px`;
+                }
+                mapContainer.style.left = `${(window.innerWidth - mapContainer.offsetWidth) / 2}px`;
+            }
             init() {
                 // Show touch hint on mobile
                 if (this.isTouchDevice) {

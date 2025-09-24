@@ -60,9 +60,15 @@
             width: 100%;
             height: 100%;
             pointer-events: none;
-            background: radial-gradient(circle at var(--x, 50%) var(--y, 50%), 
+            background: radial-gradient(circle 250px at var(--x, 50%) var(--y, 50%), 
                 transparent 0%, 
-                transparent 15%, 
+                transparent 0%, 
+                transparent 0%, 
+                transparent 0%, 
+                transparent 0%, 
+                transparent 0%, 
+                transparent 0%, 
+                transparent 0%, 
                 rgba(0, 0, 0, 0.6) 45%);
             opacity: 0;
             transition: opacity 0.5s ease;
@@ -255,6 +261,10 @@
             transition: all 0.3s ease;
         }
 
+        .info-panel-content a {
+            color: #1a73e8;
+        }
+
         .info-panel-content.active {
             opacity: 1;
             transform: translateY(0);
@@ -270,6 +280,13 @@
             transition: opacity 0.5s ease;
         }
 
+        .info-panel-image.halfsize {
+            width: 48%;
+            height: 150px;
+            margin-right: 2%;
+            margin-left: 2%;
+        }
+
         .info-panel-image.loaded {
             opacity: 1;
         }
@@ -278,7 +295,19 @@
             font-size: 18px;
             font-weight: 600;
             color: #333;
-            margin-bottom: 8px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .td-left {
+            /* text-align: left; */
+            width: 48%;
+        }
+
+        .td-right {
+            /* text-align: right; */
+            width: 52%;
+            padding-left: 4%;
         }
 
         .info-panel-details {
@@ -581,8 +610,11 @@
                     <div>Hover over a pin to explore</div>
                 </div>
                 <div class="info-panel-content">
-                    <img class="info-panel-image skeleton" src="" alt="">
                     <h3 class="info-panel-title"></h3>
+                    <div class="flex-outer flex-horizontal">
+                        <img class="info-panel-image skeleton" src="" alt="">
+                        <img class="info-panel-image skeleton image2" src="" alt="" style="display:none;">
+                    </div>
                     <div class="info-panel-details"></div>
                 </div>
             </div>
@@ -660,9 +692,9 @@
                         `
                     },
                     bhutan: {
-                        title: 'Punakha, Bhutan',
+                        title: 'Bhutan - Coming 2026',
                         image: 'assets/tooltip-backgrounds/bhutan.jpg',
-                        partnerName: "Coming Soon! - 2026",
+                        partnerName: "",
                         partnerLogo: "assets/logo-minimal-square.png",
                         details: `
                             <ul>
@@ -674,23 +706,36 @@
                     nepal: {
                         title: 'Charoudi, Dhading, Nepal',
                         image: 'assets/tooltip-backgrounds/nepal.jpg',
+                        image2: 'assets/tooltip-backgrounds/nepal2.jpg',
                         partnerName: "",
                         partnerLogo: "assets/partner-logos/nepal.png",
                         details: `
+                            <table class="nepal-double-table">
+                                <tr class="nepal-double-row">
+                                    <td class="td-left">
+                                        <strong>
+                                          <a href="https://www.facebook.com/people/Shree-Sukute-Secondary-School/100059037773366/?mibextid=ZbWKwL" target="_blank">
+                                          Shree Sukute High School
+                                          </a>
+                                        </strong>
+                                    </td>
+                                    <td class="td-right">
+                                        <strong>
+                                          <a href="https://www.facebook.com/BenighatSchool/" target="_blank">
+                                            Shree Chandrodaya Secondary School
+                                          </a>
+                                        </strong>
+                                    </td>
+                                </tr>
+                            </table>
                             <ul>
-                                <li><strong>
-                                  <a href="https://www.facebook.com/people/Shree-Sukute-Secondary-School/100059037773366/?mibextid=ZbWKwL" target="_blank">
-                                  Shree Sukute High School
-                                  </a>
-                                </strong></li>
-                                <li><strong>Shree Chandrodaya Secondary School</strong></li>
-                                <li><strong>Shree Shankha Devi Secondary School</strong></li>
                                 <li>Trishuli River 120 miles</li>
                                 <li>Flows through central Nepal and is a major tributary of the Narayani River</li>
                             </ul>
                             <strong>Partner:</strong> <a target="_blank" href="https://www.royalbeachnepal.com/">Royal Beach Camp</a>
-                        `
+                        `,
                     }
+                    
                 };
                 
                 this.init();
@@ -920,6 +965,24 @@
                     document.querySelectorAll('.pin').forEach(p => p.classList.remove('force-focus'));
                     this.ladakhArunachalOverlay.classList.remove('active');
                 }
+
+                const image2 = this.infoPanelContent.querySelector('.info-panel-image.image2');
+                if (pin.dataset.location === "nepal") {
+                    image2.src = this.locationData.nepal.image2;
+                    image2.alt = this.locationData.nepal.title;
+                    image2.style.display = "block";
+                    image2.classList.remove('skeleton');
+                    image2.classList.add('loaded');
+                    image.classList.add('halfsize');
+                    image2.classList.add('halfsize');
+                    title.classList.add('middle');
+                }
+                else {
+                    image2.style.display = "none";
+                    image2.classList.remove('loaded');
+                    image.classList.remove('halfsize');
+                    title.classList.remove('middle');
+                }
             }
 
             hideLocationInfo(hideAll) {
@@ -941,11 +1004,11 @@
                       this.infoPanel.style.display = "none";
                   }, 300);
                   
+                    // Hide overlay
+                    this.overlay.classList.remove('active');
+                    this.ladakhArunachalOverlay.classList.remove('active');
                 }
 
-                // Hide overlay
-                this.overlay.classList.remove('active');
-                this.ladakhArunachalOverlay.classList.remove('active');
             }
 
             addParallaxEffect() {

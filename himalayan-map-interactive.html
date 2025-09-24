@@ -140,19 +140,67 @@
 
         /* Info Panel Styles (replacing legend) */
         .map-info-panel {
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(255, 255, 255, 0.8);
             backdrop-filter: blur(10px);
             border-radius: 12px;
             padding: 16px;
             width: 320px;
             max-width: calc(100% - 40px);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
             z-index: 5;
             transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
             transform-origin: bottom right;
             position: absolute;
             left: 20px;
             bottom: 20px;
+
+        }
+
+        .info-panel-partner {
+            opacity: 0;
+            display: block;
+            font-size: 16px;
+            font-weight: 600;
+            /*
+            position: absolute;
+            left:auto;
+            right: 20px;
+            bottom: 20px;
+            */
+            width: auto;
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0);
+        }
+
+        .info-panel-partner.active {
+            opacity: 1;
+        }
+
+        .info-panel-partner-image {
+            width: auto;
+            height: 50px;
+        }
+
+        .info-panel-partner-title {
+            margin-bottom: 0;
+            margin-right: 20px;
+            font-size: 18px;
+            color: #333333;
+            margin-top: 5px;
+        }
+
+        .flex-outer {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .flex-vertical {
+            flex-direction: column;
+        }
+
+        .flex-horizontal {
+            flex-direction: row;
         }
 
         .map-info-panel-ladakh {
@@ -510,6 +558,20 @@
 
             <!-- Info Panel (replaces legend and tooltips) -->
             <div class="map-info-panel">
+                <div class="info-panel-partner">
+                    <div class="flex-outer flex-horizontal">
+                        <div class="flex-outer">
+                            <div></div>
+                            <div class="info-panel-partner-title"></div>
+                            <div></div>
+                        </div>
+                        <div class="flex-outer">
+                            <div></div>
+                            <img class="info-panel-partner-image" alt="info-panel-partner-logo"></img>
+                            <div></div>
+                        </div>
+                    </div>
+                </div>
                 <div class="info-panel-prompt">
                     <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
                         <circle cx="50" cy="50" r="20" fill="#4A90E2"/>
@@ -546,6 +608,8 @@
                     ladakh: {
                         title: 'Leh, Ladakh, India',
                         image: 'assets/tooltip-backgrounds/ladakh.jpg',
+                        partnerLink: "",
+                        partnerLogo: "assets/partner-logos/ladakh.png",
                         details: `
                             <ul>
                                 <li><strong>
@@ -555,7 +619,6 @@
                                 </strong></li>
                                 <li>Zanskar River 130 miles</li>
                                 <li>Flows through the Zanskar Range, carving a dramatic channel that ultimately joins the Indus River near Nimo, Ladakh</li>
-                                <li>Buddhist monastery heritage</li>
                             </ul>
                             <strong>Partner:</strong> <a target="_blank" href="https://wetnwildexplorations.com/">Wet N Wild Explorations</a>
                         `
@@ -563,6 +626,8 @@
                     uttarakhand: {
                         title: 'Rishikesh, Uttarakhand, India',
                         image: 'assets/tooltip-backgrounds/uttarakhand.jpg',
+                        partnerName: "",
+                        partnerLogo: "assets/partner-logos/uttarakhand.png",
                         details: `
                             <ul>
                                 <li><strong>
@@ -579,6 +644,8 @@
                     arunachal: {
                         title: 'Seppa, Arunachal Pradesh, India',
                         image: 'assets/tooltip-backgrounds/arunachal.jpg',
+                        partnerName: "",
+                        partnerLogo: "assets/partner-logos/arunachal.png",
                         details: `
                             <ul>
                                 <li><strong>
@@ -595,23 +662,20 @@
                     bhutan: {
                         title: 'Punakha, Bhutan',
                         image: 'assets/tooltip-backgrounds/bhutan.jpg',
+                        partnerName: "Coming Soon! - 2026",
+                        partnerLogo: "assets/logo-minimal-square.png",
                         details: `
                             <ul>
-                                <li><strong>
-                                  <a href="https://www.facebook.com/PunakhaCS/" target="_blank">
-                                  Punakha Central High School
-                                  </a>
-                                </strong></li>
                                 <li>Pho Chhu River 58 Miles</li>
                                 <li>Flows southward through the Himalayan terrain of Gasa and Punakha districts, the Pho Chhu merges with the Mo Chhu at Punakha Dzong, a site of profound historical and spiritual significance</li>
-                                <li>Pristine forests & biodiversity</li>
                             </ul>
-                            <strong>Partner:</strong> <a target="_blank" href="https://bhutanxplore.com/">Xplore Bhutan</a>
                         `
                     },
                     nepal: {
                         title: 'Charoudi, Dhading, Nepal',
                         image: 'assets/tooltip-backgrounds/nepal.jpg',
+                        partnerName: "",
+                        partnerLogo: "assets/partner-logos/nepal.png",
                         details: `
                             <ul>
                                 <li><strong>
@@ -660,6 +724,13 @@
                 const mapInfoPanel = document.querySelector('.map-info-panel');
                 mapInfoPanel.style.transform = `scale(${mapContainer.offsetWidth / 1100.0})`;
                 mapInfoPanel.style.transformOrigin = "bottom left";
+
+                /*
+                /* Not needed if info-panel-partner is inside map-info-panel
+                const mapPartnerPanel = document.querySelector('.info-panel-partner');
+                mapPartnerPanel.style.transform = `scale(${mapContainer.offsetWidth / 1100.0})`;
+                mapPartnerPanel.style.transformOrigin = "bottom right";
+                */
 
                 const pins = document.querySelectorAll('.pin');
                 pins.forEach(pin => {
@@ -779,6 +850,11 @@
                 const title = this.infoPanelContent.querySelector('.info-panel-title');
                 const details = this.infoPanelContent.querySelector('.info-panel-details');
 
+                const logo = {
+                    title: document.querySelector('.info-panel-partner-title'),
+                    img: document.querySelector('.info-panel-partner img')
+                };
+
                 title.textContent = data.title;
                 details.innerHTML = data.details;
 
@@ -796,12 +872,26 @@
                     tempImg.src = data.image;
                 }
 
+                // Load Logo
+                if (data.partnerName?.length > 0)
+                {
+                    logo.title.style.display = "block";
+                    logo.title.textContent = data.partnerName;
+                }
+                else {
+                    logo.title.textContent = "";
+                    logo.title.style.display = "none";
+                }
+                logo.img.src = data.partnerLogo;
+
+
                 // Hide prompt and show content
                 this.infoPanel.style.display = "block";
                 this.infoPanelPrompt.style.display = 'none';
                 this.infoPanelContent.style.display = 'block';
                 setTimeout(() => {
                     this.infoPanelContent.classList.add('active');
+                    document.querySelector(".info-panel-partner").classList.add('active');
                 }, 10);
 
                 // Show dimming overlay
@@ -843,6 +933,7 @@
                 // Hide content and show prompt
                 if (hideAll) {
                   this.infoPanelContent.classList.remove('active');
+                  document.querySelector(".info-panel-partner").classList.remove('active');
                   document.querySelectorAll('.pin').forEach(p => p.classList.remove('force-focus'));
                   setTimeout(() => {
                       this.infoPanelContent.style.display = 'none';

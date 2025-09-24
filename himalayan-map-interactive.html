@@ -207,6 +207,12 @@
             transition: all 0.3s ease;
         }
 
+        .info-panel-content-double {
+            display: flex;
+            gap: 16px;
+            flex-direction : row;
+        }
+
         .info-panel-content.active {
             opacity: 1;
             transform: translateY(0);
@@ -523,6 +529,18 @@
                     <h3 class="info-panel-title"></h3>
                     <div class="info-panel-details"></div>
                 </div>
+                <div class="info-panel-content-double">
+                    <div class="info-panel-content inner">
+                        <img class="info-panel-image skeleton" src="" alt="">
+                        <h3 class="info-panel-title"></h3>
+                        <div class="info-panel-details"></div>
+                    </div>
+                    <div class="info-panel-content inner">
+                        <img class="info-panel-image skeleton" src="" alt="">
+                        <h3 class="info-panel-title"></h3>
+                        <div class="info-panel-details"></div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -544,7 +562,7 @@
                 // Location data
                 this.locationData = {
                     ladakh: {
-                        title: 'Leh, Ladakh, India',
+                        title: 'Leh, Ladakh, India<br/><br/>Arunachal Pradesh, India',
                         image: 'assets/tooltip-backgrounds/ladakh.jpg',
                         details: `
                             <ul>
@@ -775,11 +793,23 @@
                 const data = this.locationData[location];
 
                 // Update info panel content
+                // Update info panel content
+                if (location === "ladakh" || location === "arunachal") {
+                    this.infoPanelContent.style.display = "none";
+                    this.infoPanelContent = document.querySelector('.info-panel-content-double');
+                    this.infoPanelContent.style.display = "flex";
+                }
+                else {
+                    this.infoPanelContent.style.display = "none";
+                    this.infoPanelContent = document.querySelector('.info-panel-content');
+                    this.infoPanelContent.style.display = "block";
+                }
+
                 const image = this.infoPanelContent.querySelector('.info-panel-image');
                 const title = this.infoPanelContent.querySelector('.info-panel-title');
                 const details = this.infoPanelContent.querySelector('.info-panel-details');
 
-                title.textContent = data.title;
+                title.innerHTML = data.title;
                 details.innerHTML = data.details;
 
                 // Load image
@@ -817,6 +847,7 @@
                     arunachalPin.classList.add('force-focus');
                     this.overlay.classList.remove('active');
                     this.ladakhArunachalOverlay.classList.add('active');
+                    this.infoPanelContent.style.display = "flex";
                 }
                 else if (pin.dataset.location === "arunachal") {
                     // Show Ladakh too
@@ -824,6 +855,7 @@
                     ladakhPin.classList.add('force-focus');
                     this.overlay.classList.remove('active');
                     this.ladakhArunachalOverlay.classList.add('active');
+                    this.infoPanelContent.style.display = "flex";
                 }
                 else {
                     // remove force-focus from all pins

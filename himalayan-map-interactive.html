@@ -781,6 +781,33 @@
                 pins.forEach(pin => {
                     pin.style.transform = `translate(-50%, -50%) scale(${mapContainer.offsetWidth / 1100.0})`;
                 });
+
+                // Special case for mobile
+                // get url param "mobile"
+                const urlParams = new URLSearchParams(window.location.search);
+                let isMobile = urlParams.get('mobile');
+                if (isMobile && isMobile.trim()) {
+                    isMobile = isMobile.trim().toLowerCase();
+                }
+                if (isMobile === "yes") {
+                    const currentMapWidth = mapContainer.offsetWidth;
+                    const newMapWidth = currentMapWidth * 1.5;
+                    const newMapHeight = newMapWidth * ratio;
+
+                    console.log("ratio: " + (newMapWidth / newMapHeight));
+                    mapContainer.style.height = `${newMapHeight}px`;
+                    mapWrapper.style.height = `${newMapHeight}px`
+                    mapWrapper.style.width = `${newMapWidth}px`
+                    mapWrapper.style.left = `-${currentMapWidth / 4}px`;
+                    mapContainer.style.overflow = "hidden";
+
+                    // Want to show only the centre half of the map
+                    mapInfoPanel.style.transform = `scale(0.5)`;
+                    mapInfoPanel.style.left = `${(currentMapWidth / 4) + 10}px`;
+                    mapInfoPanel.style["z-index"] = "5000";
+
+                    // mapInfoPanel.style.transformOrigin = "bottom left";
+                }
             }
             init() {
                 // Show touch hint on mobile

@@ -742,6 +742,7 @@
                 
                 window.addEventListener("load", this.resizeMapContainer);
                 window.addEventListener("resize", this.resizeMapContainer);
+                setInterval(this.resizeMapContainer, 1000);
 
                 const ladakhPin = document.querySelector('.pin[data-location="ladakh"]');
 

@@ -803,10 +803,17 @@
                     mapWrapper.style.left = `-${currentMapWidth / 4}px`;
                     mapContainer.style.overflow = "hidden";
 
+                    pins.forEach(pin => {
+                        pin.style.transform = `translate(-50%, -50%) scale(${newMapWidth * 2 / 1100.0})`;
+                    });
+
                     // Want to show only the centre half of the map
-                    mapInfoPanel.style.transform = `scale(0.5)`;
+                    mapInfoPanel.style.transform = `scale(${newMapHeight * 1.2 / 1100.0})`;
                     mapInfoPanel.style.left = `${(currentMapWidth / 4) + 10}px`;
                     mapInfoPanel.style["z-index"] = "5000";
+
+                    document.querySelector("html").style.overflow = "hidden";
+                    mapWrapper.scrollIntoView({behavior: "smooth", block: "center", inline: "center"});
 
                     // mapInfoPanel.style.transformOrigin = "bottom left";
                 }
